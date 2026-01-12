@@ -1,11 +1,6 @@
 ---
 title: "Project"
-author: 
-  - "Vishwas Ramakrishna (A20552892)"
-  - "Vrushabh Shet (A20560742)"
-  - "Rachana Vijay (A20605843)"
-  - "Sathvika Reddy Madithati (A20584937)"
-  - "Umesh Chand Vankayalapati (A20576496)"
+author: "Rachana"
   
 date: "12-05-2025"
 output:
