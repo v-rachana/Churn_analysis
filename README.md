@@ -7,10 +7,9 @@ Machine learning (ML) provides powerful tools for identifying at-risk customers,
 Data Source: [Telco Customer Churn Dataset – Kaggle ](https://www.kaggle.com/datasets/alfathterry/telco-customer-churn-11-1-3)
 
 The dataset comprises various customer-level features, including tenure, monthly charges, contract type, and satisfaction score. The project objectives are: 
-
-• Customer Behavior Analysis: Apply clustering and dimensionality reduction to uncover latent customer segments.
-• Churn Prediction Modeling: Build and evaluate classification models to predict churn likelihood. 
-• Business Insight Extraction: Translate predictive insights into actionable retention strategies. 
+1. Customer Behavior Analysis: Apply clustering and dimensionality reduction to uncover latent customer segments.
+2. Churn Prediction Modeling: Build and evaluate classification models to predict churn likelihood.
+3. Business Insight Extraction: Translate predictive insights into actionable retention strategies. 
 
 To accomplish these objectives, the project implements a full ML pipeline including preprocessing, feature engineering, model training, and validation. Dimensionality reduction methods (PCA, t-SNE, UMAP) were used to visualize patterns and support segmentation. Logistic Regression, Random Forest, and XGBoost models were trained for churn prediction, with XGBoost achieving the highest balanced performance. 
 
