@@ -48,7 +48,7 @@ library(tidyverse)
 library(data.table)
 
 # Load the dataset
-file_path <- "/Users/vishwasramakrishna/Downloads/DPA_Project_Telco_Customer_Churn_Prediction 2/telco.csv"
+file_path <- "/Users/vrach/Downloads/Telco_Customer_Churn_Prediction/telco.csv"
 telco_data <- fread(file_path)  
 
 # View dimensions of the dataset
