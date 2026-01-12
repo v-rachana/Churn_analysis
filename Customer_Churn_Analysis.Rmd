@@ -1,0 +1,1043 @@
+---
+title: "Project"
+author: 
+  - "Vishwas Ramakrishna (A20552892)"
+  - "Vrushabh Shet (A20560742)"
+  - "Rachana Vijay (A20605843)"
+  - "Sathvika Reddy Madithati (A20584937)"
+  - "Umesh Chand Vankayalapati (A20576496)"
+  
+date: "12-05-2025"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+always_allow_html: true
+---
+
+```{r}
+# Core Libraries
+library(tidyverse)     
+library(data.table)    
+
+# Visualization
+library(ggplot2)
+library(cowplot)       
+library(gridExtra)    
+
+# Data Preprocessing
+library(caret)         
+library(recipes)       
+library(dplyr)        
+library(forcats)       
+
+# Unsupervised Learning
+library(stats)         
+
+# Modeling and Evaluation
+library(caret)         
+library(randomForest)  
+library(gbm)          
+library(e1071)        
+library(pROC)          
+library(MASS)          
+library(cluster)       
+library(FactoMineR)    
+library(factoextra)   
+library(conflicted)
+```
+
+```{r}
+# Load required libraries
+library(tidyverse)
+library(data.table)
+
+# Load the dataset
+file_path <- "/Users/vishwasramakrishna/Downloads/DPA_Project_Telco_Customer_Churn_Prediction 2/telco.csv"
+telco_data <- fread(file_path)  
+
+# View dimensions of the dataset
+dim(telco_data)
+
+# Check for missing values
+missing_summary <- colSums(is.na(telco_data))
+cat("Missing Values per Column:\n")
+print(missing_summary)
+
+# Check percentage of missing values
+missing_percentage <- (colSums(is.na(telco_data)) / nrow(telco_data)) * 100
+cat("\nPercentage of Missing Values:\n")
+print(missing_percentage)
+
+```
+
+```{r}
+# Handle missing values in 'Offer' column
+telco_data$Offer[is.na(telco_data$Offer)] <- "No Offer"
+
+# Verify missing values for 'Offer' after handling
+missing_offer <- sum(is.na(telco_data$Offer))
+cat("Missing Values in 'Offer' After Handling:", missing_offer, "\n")
+
+```
+
+```{r}
+# Handle missing values in 'Internet Type' using the most frequent value (mode)
+most_frequent_internet_type <- names(sort(table(telco_data$`Internet Type`), decreasing = TRUE))[1]
+telco_data$`Internet Type`[is.na(telco_data$`Internet Type`)] <- most_frequent_internet_type
+
+# Verify missing values for 'Internet Type' after handling
+missing_internet_type <- sum(is.na(telco_data$`Internet Type`))
+cat("Missing Values in 'Internet Type' After Handling:", missing_internet_type, "\n")
+
+```
+
+```{r}
+library(dplyr)
+
+# Summary statistics for numeric columns
+summary(as.data.frame(telco_data)[sapply(telco_data, is.numeric)])
+
+```
+
+```{r}
+# Check for missing values per column
+missing_summary <- colSums(is.na(telco_data))
+cat("Missing Values per Column:\n")
+print(missing_summary)
+
+```
+
+```{r}
+# Handle missing values for 'Churn Category'
+telco_data$`Churn Category`[is.na(telco_data$`Churn Category`)] <- "Not Applicable"
+
+# Verify missing values for 'Churn Category'
+missing_churn_category <- sum(is.na(telco_data$`Churn Category`))
+cat("Missing Values in 'Churn Category' After Handling:", missing_churn_category, "\n")
+
+# Handle missing values for 'Churn Reason'
+telco_data$`Churn Reason`[is.na(telco_data$`Churn Reason`)] <- "Not Applicable"
+
+# Verify missing values for 'Churn Reason'
+missing_churn_reason <- sum(is.na(telco_data$`Churn Reason`))
+cat("Missing Values in 'Churn Reason' After Handling:", missing_churn_reason, "\n")
+
+# Final check for missing values per column
+missing_summary <- colSums(is.na(telco_data))
+cat("Missing Values per Column:\n")
+print(missing_summary)
+
+```
+
+```{r}
+# Visualization of the target variable
+churn_counts <- table(telco_data$`Churn Label`)
+print(churn_counts)
+
+# Load ggplot2 for visualization
+library(ggplot2)
+
+# Bar plot of 'Churn Label'
+ggplot(telco_data, aes(x = `Churn Label`)) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Churn Label Distribution", x = "Churn Label", y = "Count") +
+  theme_minimal()
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggcorrplot)
+library(ggplot2)
+
+telco_df <- as.data.frame(telco_data)
+
+numeric_data <- select_if(telco_df, is.numeric)
+
+# Compute correlation matrix
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Plot heatmap
+ggcorrplot(correlation_matrix,
+           method = "circle", 
+           type = "lower",
+           lab = TRUE,
+           lab_size = 3,
+           colors = c("blue", "white", "red"),
+           title = "Correlation Matrix for Numerical Features",
+           ggtheme = theme_minimal())
+```
+
+```{r}
+library(ggplot2)
+
+# Boxplot: Tenure in Months vs Churn Label
+ggplot(telco_data, aes(x = `Churn Label`, y = `Tenure in Months`)) +
+  geom_boxplot(fill = "skyblue") +
+  labs(title = "Tenure in Months by Churn Label", x = "Churn Label", y = "Tenure in Months") +
+  theme_minimal()
+
+# Boxplot: Monthly Charges vs Churn Label
+ggplot(telco_data, aes(x = `Churn Label`, y = `Monthly Charge`)) +
+  geom_boxplot(fill = "tomato") +
+  labs(title = "Monthly Charges by Churn Label", x = "Churn Label", y = "Monthly Charge") +
+  theme_minimal()
+
+# Boxplot: Satisfaction Score vs Churn Label
+ggplot(telco_data, aes(x = `Churn Label`, y = `Satisfaction Score`)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Satisfaction Score by Churn Label", x = "Churn Label", y = "Satisfaction Score") +
+  theme_minimal()
+
+```
+
+```{r}
+library(ggplot2)
+
+# Countplot: Internet Type vs Churn Label
+ggplot(telco_data, aes(x = `Internet Type`, fill = `Churn Label`)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Internet Type vs Churn Label", x = "Internet Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Countplot: Contract Type vs Churn Label
+ggplot(telco_data, aes(x = Contract, fill = `Churn Label`)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Contract Type vs Churn Label", x = "Contract Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+# Chi-squared test: Internet Type vs Churn Label
+internet_type_churn <- table(telco_data$`Internet Type`, telco_data$`Churn Label`)
+chi_test_1 <- chisq.test(internet_type_churn)
+
+cat("Chi-squared Test for 'Internet Type' and 'Churn Label':\n")
+cat("Chi2 Stat:", chi_test_1$statistic, ", P-value:", chi_test_1$p.value, 
+    ", Degrees of Freedom:", chi_test_1$parameter, "\n")
+
+if (chi_test_1$p.value < 0.05) {
+  cat("There is a significant relationship between Internet Type and Churn Label.\n\n")
+} else {
+  cat("No significant relationship between Internet Type and Churn Label.\n\n")
+}
+
+
+# Chi-squared test: Contract Type vs Churn Label
+contract_churn <- table(telco_data$Contract, telco_data$`Churn Label`)
+chi_test_2 <- chisq.test(contract_churn)
+
+cat("Chi-squared Test for 'Contract' and 'Churn Label':\n")
+cat("Chi2 Stat:", chi_test_2$statistic, ", P-value:", chi_test_2$p.value, 
+    ", Degrees of Freedom:", chi_test_2$parameter, "\n")
+
+if (chi_test_2$p.value < 0.05) {
+  cat("There is a significant relationship between Contract Type and Churn Label.\n")
+} else {
+  cat("No significant relationship between Contract Type and Churn Label.\n")
+}
+
+```
+
+```{r}
+library(recipes)
+library(dplyr)
+library(caret)
+
+telco_df <- as.data.frame(telco_data)
+
+# Select relevant features
+selected_features <- c("Tenure in Months", "Monthly Charge", "Satisfaction Score", 
+                       "Contract", "Internet Type")
+
+telco_selected <- dplyr::select(telco_df, all_of(selected_features))
+
+# Define preprocessing recipe
+rec <- recipe(~ ., data = telco_selected) %>%
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) %>%  
+  step_center(all_numeric_predictors()) %>%
+  step_scale(all_numeric_predictors())
+
+# Prep and bake (apply) the transformations
+prepped_data <- prep(rec, training = telco_selected)
+processed_features <- bake(prepped_data, new_data = telco_selected)
+
+# Check number of resulting features
+n_features <- ncol(processed_features)
+n_components_value <- min(7, n_features)
+
+# Output
+cat("Total Features After Preprocessing:", n_features, "\n")
+cat("Number of PCA Components to Use:", n_components_value, "\n")
+```
+
+```{r}
+cat("Number of Features:", ncol(processed_features), "\n")
+
+```
+
+```{r}
+# Apply PCA
+pca_result <- prcomp(processed_features, center = TRUE, scale. = TRUE)
+
+# Get the number of components 
+n_features <- ncol(processed_features)
+n_components <- min(7, n_features)
+
+# Compute cumulative explained variance
+explained_variance <- cumsum(pca_result$sdev^2 / sum(pca_result$sdev^2))
+
+# Prepare data for plotting
+pca_df <- data.frame(
+  Components = 1:n_components,
+  CumulativeExplainedVariance = explained_variance[1:n_components]
+)
+
+# Plot cumulative explained variance
+library(ggplot2)
+
+ggplot(pca_df, aes(x = Components, y = CumulativeExplainedVariance)) +
+  geom_line(linetype = "dashed") +
+  geom_point(size = 2) +
+  labs(title = "Explained Variance by Principal Components",
+       x = "Number of Principal Components",
+       y = "Cumulative Explained Variance") +
+  theme_minimal()
+
+```
+
+```{r}
+library(ggplot2)
+
+# Create a dataframe with PC1 and PC2
+pca_df <- as.data.frame(pca_result$x[, 1:2])
+colnames(pca_df) <- c("PC1", "PC2")
+
+# Add churn label for coloring
+pca_df$ChurnLabel <- as.factor(telco_data$`Churn Label`)
+
+# Plot
+ggplot(pca_df, aes(x = PC1, y = PC2, color = ChurnLabel)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "PCA 2D Visualization (PC1 vs PC2)",
+       x = "Principal Component 1",
+       y = "Principal Component 2",
+       color = "Churn Label") +
+  theme_minimal()
+
+```
+
+```{r}
+
+library(plotly)
+library(conflicted)
+
+# Always prefer plotly's layout instead of graphics::layout
+conflicts_prefer(plotly::layout)
+
+# Extract first 3 principal components
+pca_3d <- as.data.frame(pca_result$x[, 1:3])
+colnames(pca_3d) <- c("PC1", "PC2", "PC3")
+pca_3d$ChurnLabel <- as.factor(telco_data$`Churn Label`)
+
+# Create 3D scatter plot
+plot_ly(
+  data = pca_3d,
+  x = ~PC1, y = ~PC2, z = ~PC3,
+  color = ~ChurnLabel,
+  colors = c("steelblue", "tomato"),
+  type = "scatter3d",
+  mode = "markers",
+  marker = list(size = 4, opacity = 0.7)
+) %>%
+  plotly::layout(
+    title = "PCA 3D Visualization (PC1, PC2, PC3)",
+    scene = list(
+      xaxis = list(title = "Principal Component 1"),
+      yaxis = list(title = "Principal Component 2"),
+      zaxis = list(title = "Principal Component 3")
+    )
+  )
+
+```
+
+```{r}
+library(umap)
+library(ggplot2)
+
+# Set UMAP configuration
+umap_config <- umap.defaults
+umap_config$n_neighbors <- 15
+umap_config$min_dist <- 0.1
+umap_config$random_state <- 42
+
+# Perform UMAP on the processed features
+set.seed(42)
+umap_result <- umap(as.matrix(processed_features), config = umap_config)
+
+# Convert UMAP layout to dataframe
+umap_df <- as.data.frame(umap_result$layout)
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+umap_df$ChurnLabel <- as.factor(telco_data$`Churn Label`)
+
+# Plot UMAP results
+ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = ChurnLabel)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "UMAP Visualization",
+       x = "UMAP Dimension 1",
+       y = "UMAP Dimension 2",
+       color = "Churn Label") +
+  theme_minimal()
+
+```
+
+```{r}
+library(Rtsne)
+library(ggplot2)
+
+# Remove duplicates from the matrix
+processed_unique <- unique(as.matrix(processed_features))
+
+duplicate_rows <- duplicated(as.data.frame(processed_features))
+filtered_telco_data <- telco_data[!duplicate_rows, ]
+
+# Run t-SNE
+set.seed(42)
+tsne_result <- Rtsne(
+  processed_unique, 
+  dims = 2, 
+  perplexity = 30, 
+  max_iter = 500, 
+  verbose = TRUE
+)
+
+# Convert results to dataframe
+tsne_df <- as.data.frame(tsne_result$Y)
+colnames(tsne_df) <- c("TSNE1", "TSNE2")
+tsne_df$ChurnLabel <- as.factor(filtered_telco_data$`Churn Label`)
+
+# Plot t-SNE results
+ggplot(tsne_df, aes(x = TSNE1, y = TSNE2, color = ChurnLabel)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "t-SNE Visualization (Perplexity = 30)",
+       x = "t-SNE Dimension 1",
+       y = "t-SNE Dimension 2",
+       color = "Churn Label") +
+  theme_minimal()
+```
+
+```{r}
+library(Rtsne)
+library(ggplot2)
+
+# Remove duplicate rows from processed features
+processed_unique <- unique(as.matrix(processed_features))
+
+# Filter churn labels accordingly
+duplicate_rows <- duplicated(as.data.frame(processed_features))
+filtered_telco_data <- telco_data[!duplicate_rows, ]
+
+# Define perplexity values
+perplexities <- c(10, 30, 50)
+
+# Loop through perplexity values and plot t-SNE
+for (perp in perplexities) {
+  set.seed(42)
+  tsne_result <- Rtsne(processed_unique,
+                       dims = 2,
+                       perplexity = perp,
+                       max_iter = 500,
+                       verbose = FALSE)
+  
+  tsne_df <- as.data.frame(tsne_result$Y)
+  colnames(tsne_df) <- c("TSNE1", "TSNE2")
+  tsne_df$ChurnLabel <- as.factor(filtered_telco_data$`Churn Label`)
+  
+  p <- ggplot(tsne_df, aes(x = TSNE1, y = TSNE2, color = ChurnLabel)) +
+    geom_point(alpha = 0.7) +
+    labs(
+      title = paste("t-SNE Visualization (Perplexity =", perp, ")"),
+      x = "t-SNE Dimension 1",
+      y = "t-SNE Dimension 2",
+      color = "Churn Label"
+    ) +
+    theme_minimal()
+  
+  print(p)
+}
+
+```
+
+```{r}
+library(umap)
+library(ggplot2)
+
+# Define combinations of parameters
+n_neighbors_list <- c(10, 30, 50)
+min_dist_list <- c(0.1, 0.5)
+
+# Loop through each combination of n_neighbors and min_dist
+for (n_neighbors in n_neighbors_list) {
+  for (min_dist in min_dist_list) {
+    
+    # Configure UMAP parameters
+    umap_config <- umap.defaults
+    umap_config$n_neighbors <- n_neighbors
+    umap_config$min_dist <- min_dist
+    umap_config$random_state <- 42
+    
+    # Run UMAP
+    set.seed(42)
+    umap_result <- umap(as.matrix(processed_features), config = umap_config)
+    
+    # Create data frame for plotting
+    umap_df <- as.data.frame(umap_result$layout)
+    colnames(umap_df) <- c("UMAP1", "UMAP2")
+    umap_df$ChurnLabel <- as.factor(telco_data$`Churn Label`)
+    
+    # Create and show the plot
+    plot_title <- paste("UMAP Visualization (n_neighbors =", n_neighbors, ", min_dist =", min_dist, ")")
+    
+    p <- ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = ChurnLabel)) +
+      geom_point(alpha = 0.7) +
+      labs(title = plot_title, x = "UMAP Dimension 1", y = "UMAP Dimension 2", color = "Churn Label") +
+      theme_minimal()
+    
+    print(p)
+  }
+}
+
+```
+
+```{r}
+library(dplyr)
+
+# Create interaction terms
+telco_data <- telco_data %>%
+  mutate(
+    Tenure_Charge = `Tenure in Months` * `Monthly Charge`,
+    Satisfaction_Contract = `Satisfaction Score` * as.numeric(as.factor(Contract)),
+
+    # Transform numerical features
+    Log_Monthly_Charge = log1p(`Monthly Charge`),
+    Square_Satisfaction = `Satisfaction Score`^2,
+
+    # Create new features
+    Avg_Charge_Per_Month = `Total Charges` / ifelse(`Tenure in Months` == 0, 1, `Tenure in Months`),
+    High_Spender = as.integer(`Monthly Charge` > median(`Monthly Charge`, na.rm = TRUE))
+  )
+
+```
+
+```{r}
+categorical_features <- c("Contract", "Internet Type")
+
+numerical_features <- c(
+  "Tenure in Months", "Monthly Charge", "Satisfaction Score",
+  "Tenure_Charge", "Satisfaction_Contract", "Log_Monthly_Charge",
+  "Square_Satisfaction", "Avg_Charge_Per_Month"
+)
+
+```
+
+```{r}
+library(recipes)
+library(conflicted)
+conflicts_prefer(dplyr::select)
+# Subset relevant columns
+telco_subset <- telco_data %>%
+  select(all_of(c(numerical_features, categorical_features)))
+
+# Define preprocessing pipeline
+rec <- recipe(~ ., data = telco_subset) %>%
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) %>%
+  step_center(all_numeric_predictors()) %>%
+  step_scale(all_numeric_predictors())
+
+# Prepare and apply transformations
+prepped_data <- prep(rec, training = telco_subset)
+processed_features <- bake(prepped_data, new_data = telco_subset)
+
+```
+
+```{r}
+library(Rtsne)
+library(ggplot2)
+
+# Step 1: Convert to data frame for de-duplication
+processed_df <- as.data.frame(processed_features)
+
+# Step 2: Identify and remove duplicate rows
+non_duplicate_mask <- !duplicated(processed_df)
+processed_unique <- processed_df[non_duplicate_mask, ]
+
+# Step 3: Filter labels to match non-duplicated rows
+filtered_labels <- telco_data$`Churn Label`[non_duplicate_mask]
+
+# Step 4: Convert to matrix for Rtsne
+processed_matrix <- as.matrix(processed_unique)
+
+# Step 5: Run t-SNE
+set.seed(42)
+tsne_result <- Rtsne(processed_matrix,
+                     dims = 2,
+                     perplexity = 30,
+                     max_iter = 500,
+                     verbose = FALSE)
+
+# Step 6: Prepare DataFrame for plotting
+tsne_df <- as.data.frame(tsne_result$Y)
+colnames(tsne_df) <- c("TSNE1", "TSNE2")
+tsne_df$ChurnLabel <- as.factor(filtered_labels)
+
+# Step 7: Plot
+ggplot(tsne_df, aes(x = TSNE1, y = TSNE2, color = ChurnLabel)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "t-SNE with Engineered Features (No Duplicates)",
+       x = "t-SNE Dimension 1",
+       y = "t-SNE Dimension 2",
+       color = "Churn Label") +
+  theme_minimal()
+
+```
+
+```{r}
+library(umap)
+library(ggplot2)
+
+# Configure UMAP
+umap_config <- umap.defaults
+umap_config$n_neighbors <- 30
+umap_config$min_dist <- 0.1
+umap_config$random_state <- 42
+
+# Run UMAP
+set.seed(42)
+umap_result <- umap(as.matrix(processed_features), config = umap_config)
+
+# Create a dataframe for plotting
+umap_df <- as.data.frame(umap_result$layout)
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+umap_df$ChurnLabel <- as.factor(telco_data$`Churn Label`)
+
+# Plot the UMAP result
+ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = ChurnLabel)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "UMAP with Engineered Features",
+       x = "UMAP Dimension 1",
+       y = "UMAP Dimension 2",
+       color = "Churn Label") +
+  theme_minimal()
+
+```
+
+```{r}
+library(caret)
+library(randomForest)
+library(dplyr)
+
+# Encode target variable ('Yes' -> 1, 'No' -> 0)
+y <- as.factor(ifelse(telco_data$`Churn Label` == "Yes", 1, 0))
+
+colnames(processed_features) <- make.names(paste0("Feature_", seq_len(ncol(processed_features))))
+
+# Combine features and target
+data_model <- as.data.frame(processed_features)
+data_model$Churn <- y
+
+# Set up stratified 5-fold cross-validation
+set.seed(42)
+cv_folds <- createFolds(data_model$Churn, k = 5, list = TRUE, returnTrain = TRUE)
+
+# Initialize metric lists
+accuracy <- c()
+precision <- c()
+recall <- c()
+f1 <- c()
+
+# Cross-validation loop
+for (i in 1:5) {
+  train_indices <- cv_folds[[i]]
+  train_data <- data_model[train_indices, ]
+  test_data <- data_model[-train_indices, ]
+  
+  model <- randomForest(Churn ~ ., data = train_data, ntree = 100, importance = TRUE)
+  predictions <- predict(model, test_data)
+  truth <- test_data$Churn
+  
+  # Confusion matrix
+  cm <- confusionMatrix(predictions, truth, positive = "1")
+  
+  # Store metrics
+  accuracy <- c(accuracy, cm$overall["Accuracy"])
+  precision <- c(precision, cm$byClass["Precision"])
+  recall <- c(recall, cm$byClass["Recall"])
+  f1 <- c(f1, cm$byClass["F1"])
+}
+
+# Print aggregated results
+cat("Random Forest Classifier Results:\n")
+cat("K-Fold Cross-Validation Results:\n")
+cat(sprintf("Accuracy: %.4f\n", mean(accuracy)))
+cat(sprintf("Precision: %.4f\n", mean(precision)))
+cat(sprintf("Recall: %.4f\n", mean(recall)))
+cat(sprintf("F1-Score: %.4f\n", mean(f1)))
+
+```
+
+```{r}
+library(caret)
+library(ranger)
+library(dplyr)
+library(conflicted)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::select)  # also for select if needed
+
+# Encode the target variable
+y <- as.factor(ifelse(telco_data$`Churn Label` == "Yes", 1, 0))
+
+# Rename features to be safe for modeling
+colnames(processed_features) <- make.names(paste0("Feature_", seq_len(ncol(processed_features))))
+
+# Combine features and target
+data_model <- as.data.frame(processed_features)
+data_model$Churn <- factor(y, labels = c("No", "Yes"))
+
+# Set up stratified 5-fold cross-validation with ROC
+train_control <- trainControl(
+  method = "cv", 
+  number = 5, 
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  savePredictions = "final"
+)
+
+# Define parameter grid
+rf_grid <- expand.grid(
+  .mtry = c(2, 3, 4),  
+  .splitrule = "gini",
+  .min.node.size = c(1, 2, 4)  
+)
+
+# Train the model using caret + ranger
+set.seed(42)
+rf_model <- train(
+  Churn ~ ., 
+  data = data_model,
+  method = "ranger",
+  trControl = train_control,
+  metric = "ROC",        
+  tuneGrid = rf_grid,
+  importance = 'impurity'
+)
+
+# Print best parameters
+cat("Best Parameters:\n")
+print(rf_model$bestTune)
+
+# Get final predictions and compute evaluation metrics manually
+preds <- rf_model$pred
+best_params <- rf_model$bestTune
+
+# Filter predictions to the best parameter combination
+preds_best <- preds %>%
+  filter(
+    mtry == best_params$mtry,
+    splitrule == best_params$splitrule,
+    min.node.size == best_params$min.node.size
+  )
+
+# Compute confusion matrix
+cm <- confusionMatrix(preds_best$pred, preds_best$obs, positive = "Yes")
+
+# Output metrics
+cat("\nTuned Random Forest Classifier Results (Cross-Validation):\n")
+cat(sprintf("Accuracy: %.4f\n", cm$overall["Accuracy"]))
+cat(sprintf("Precision: %.4f\n", cm$byClass["Precision"]))
+cat(sprintf("Recall: %.4f\n", cm$byClass["Recall"]))
+cat(sprintf("F1-Score: %.4f\n", cm$byClass["F1"]))
+
+```
+
+```{r}
+library(caret)
+library(dplyr)
+
+# Encode target as factor: "Yes" = 1, "No" = 0
+y <- as.factor(ifelse(telco_data$`Churn Label` == "Yes", 1, 0))
+
+# Combine features and label
+data_model <- processed_features
+data_model$Churn <- y
+
+data_model$Churn <- factor(data_model$Churn, labels = c("No", "Yes"))
+
+# Set up stratified 5-fold cross-validation
+set.seed(42)
+cv_folds <- createFolds(data_model$Churn, k = 5, list = TRUE, returnTrain = TRUE)
+
+# Initialize metric lists
+accuracy_lr <- c()
+precision_lr <- c()
+recall_lr <- c()
+f1_lr <- c()
+
+# Run manual cross-validation loop
+for (i in 1:5) {
+  train_idx <- cv_folds[[i]]
+  train_data <- data_model[train_idx, ]
+  test_data <- data_model[-train_idx, ]
+  
+  # Fit logistic regression
+  log_model <- glm(Churn ~ ., data = train_data, family = binomial)
+  
+  # Predict probabilities and class labels
+  probs <- predict(log_model, test_data, type = "response")
+  preds <- ifelse(probs > 0.5, "Yes", "No") %>% as.factor()
+  
+  # Evaluation
+  cm <- confusionMatrix(preds, test_data$Churn, positive = "Yes")
+  accuracy_lr <- c(accuracy_lr, cm$overall["Accuracy"])
+  precision_lr <- c(precision_lr, cm$byClass["Precision"])
+  recall_lr <- c(recall_lr, cm$byClass["Recall"])
+  f1_lr <- c(f1_lr, cm$byClass["F1"])
+}
+
+# Print averaged results
+cat("Logistic Regression Results:\n")
+cat(sprintf("Accuracy: %.4f\n", mean(accuracy_lr)))
+cat(sprintf("Precision: %.4f\n", mean(precision_lr)))
+cat(sprintf("Recall: %.4f\n", mean(recall_lr)))
+cat(sprintf("F1-Score: %.4f\n", mean(f1_lr)))
+
+```
+
+```{r}
+library(caret)
+library(dplyr)
+
+# Encode target
+y <- as.factor(ifelse(telco_data$`Churn Label` == "Yes", 1, 0))
+
+# Rename features to valid names
+colnames(processed_features) <- make.names(paste0("Feature_", seq_len(ncol(processed_features))))
+
+# Combine features and target
+data_model <- as.data.frame(processed_features)
+data_model$Churn <- factor(y, labels = c("No", "Yes"))
+
+# Define 5-fold stratified cross-validation
+set.seed(42)
+train_control <- trainControl(
+  method = "cv",
+  number = 5,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  savePredictions = "final"
+)
+
+# Define parameter grid for glmnet
+lambda_values <- 1 / c(0.01, 0.1, 1, 10, 100)
+
+# Train logistic regression with regularization 
+set.seed(42)
+log_model <- train(
+  Churn ~ .,
+  data = data_model,
+  method = "glmnet",
+  trControl = train_control,
+  metric = "ROC",  
+  tuneGrid = expand.grid(
+    alpha = 0,      
+    lambda = lambda_values
+  ),
+  family = "binomial"
+)
+
+# Show best parameters
+cat("Best Parameters:\n")
+print(log_model$bestTune)
+
+# Extract predictions for best model
+best_params <- log_model$bestTune
+preds_best <- log_model$pred %>%
+  filter(
+    alpha == best_params$alpha,
+    lambda == best_params$lambda
+  )
+
+# Compute confusion matrix
+cm <- confusionMatrix(preds_best$pred, preds_best$obs, positive = "Yes")
+
+# Output final metrics
+cat("\nTuned Logistic Regression Results (Cross-Validation):\n")
+cat(sprintf("Accuracy: %.4f\n", cm$overall["Accuracy"]))
+cat(sprintf("Precision: %.4f\n", cm$byClass["Precision"]))
+cat(sprintf("Recall: %.4f\n", cm$byClass["Recall"]))
+cat(sprintf("F1-Score: %.4f\n", cm$byClass["F1"]))
+
+```
+
+```{r}
+library(xgboost)
+library(caret)
+library(dplyr)
+
+# Encode target variable: "Yes" = 1, "No" = 0
+y <- ifelse(telco_data$`Churn Label` == "Yes", 1, 0)
+
+# Convert processed_features and y to matrices (xgboost requires matrices)
+X <- as.matrix(processed_features)
+y <- as.numeric(y)
+
+# Stratified 5-fold split
+set.seed(42)
+folds <- createFolds(y, k = 5, list = TRUE, returnTrain = TRUE)
+
+# Initialize metric holders
+accuracy_xgb <- c()
+precision_xgb <- c()
+recall_xgb <- c()
+f1_xgb <- c()
+
+# Cross-validation with early stopping
+for (i in 1:5) {
+  train_idx <- folds[[i]]
+  test_idx <- setdiff(1:nrow(X), train_idx)
+  
+  # Training/validation split for early stopping
+  train_X_full <- X[train_idx, ]
+  train_y_full <- y[train_idx]
+  
+  n <- floor(0.8 * length(train_y_full))
+  train_X <- train_X_full[1:n, ]
+  train_y <- train_y_full[1:n]
+  val_X <- train_X_full[(n + 1):length(train_y_full), ]
+  val_y <- train_y_full[(n + 1):length(train_y_full)]
+
+  # DMatrix objects for XGBoost
+  dtrain <- xgb.DMatrix(data = train_X, label = train_y)
+  dval <- xgb.DMatrix(data = val_X, label = val_y)
+  dtest <- xgb.DMatrix(data = X[test_idx, ])
+  
+  # Train XGBoost with early stopping
+  xgb_model <- xgb.train(
+    params = list(
+      objective = "binary:logistic",
+      eval_metric = "logloss",
+      max_depth = 6,
+      eta = 0.3
+    ),
+    data = dtrain,
+    nrounds = 100,
+    watchlist = list(val = dval),
+    early_stopping_rounds = 10,
+    verbose = 0
+  )
+  
+  # Predict and evaluate
+  preds <- predict(xgb_model, dtest)
+  preds_class <- ifelse(preds > 0.5, 1, 0)
+  true_labels <- y[test_idx]
+  
+  cm <- confusionMatrix(
+    factor(preds_class, levels = c(0, 1)),
+    factor(true_labels, levels = c(0, 1)),
+    positive = "1"
+  )
+  
+  accuracy_xgb <- c(accuracy_xgb, cm$overall["Accuracy"])
+  precision_xgb <- c(precision_xgb, cm$byClass["Precision"])
+  recall_xgb <- c(recall_xgb, cm$byClass["Recall"])
+  f1_xgb <- c(f1_xgb, cm$byClass["F1"])
+}
+
+# Print averaged results
+cat("XGBoost Results with Early Stopping:\n")
+cat(sprintf("Accuracy: %.4f\n", mean(accuracy_xgb)))
+cat(sprintf("Precision: %.4f\n", mean(precision_xgb)))
+cat(sprintf("Recall: %.4f\n", mean(recall_xgb)))
+cat(sprintf("F1-Score: %.4f\n", mean(f1_xgb)))
+
+```
+
+```{r}
+library(caret)
+library(xgboost)
+library(dplyr)
+
+# Encode target variable: "Yes" = 1, "No" = 0
+y <- ifelse(telco_data$`Churn Label` == "Yes", 1, 0)
+y <- factor(y, levels = c(0, 1), labels = c("No", "Yes"))
+
+# Combine features and label
+data_model <- processed_features
+data_model$Churn <- y
+
+set.seed(42)
+train_control <- trainControl(
+  method = "cv",
+  number = 5,
+  summaryFunction = defaultSummary, 
+  savePredictions = TRUE,
+  verboseIter = TRUE
+)
+
+# Keep original grid
+xgb_grid <- expand.grid(
+  nrounds = c(50, 100, 200),
+  max_depth = c(3, 5, 7),
+  eta = c(0.01, 0.1, 0.2),
+  gamma = c(0, 1, 5),
+  colsample_bytree = c(0.8, 1.0),
+  min_child_weight = 1,
+  subsample = c(0.8, 1.0)
+)
+
+set.seed(42)
+xgb_model <- train(
+  Churn ~ .,
+  data = data_model,
+  method = "xgbTree",
+  trControl = train_control,
+  tuneGrid = xgb_grid,
+  metric = "Accuracy"  
+)
+
+# Best Parameters
+cat("Best Parameters Found:\n")
+print(xgb_model$bestTune)
+
+# Compute Precision, Recall, F1 manually using predictions
+library(caret)
+predictions <- xgb_model$pred
+predictions <- predictions[predictions$Resample %in% paste0("Fold", 1:5), ]  
+
+# Confusion Matrix and Metrics
+precision <- c()
+recall <- c()
+f1 <- c()
+accuracy <- c()
+
+for (i in 1:5) {
+  fold_pred <- predictions[predictions$Resample == paste0("Fold", i), ]
+  cm <- confusionMatrix(fold_pred$pred, fold_pred$obs, positive = "Yes")
+  precision <- c(precision, cm$byClass["Precision"])
+  recall <- c(recall, cm$byClass["Recall"])
+  f1 <- c(f1, cm$byClass["F1"])
+  accuracy <- c(accuracy, cm$overall["Accuracy"])
+}
+
+# Print Results
+cat("\nXGBoost Results After Hyperparameter Tuning:\n")
+cat(sprintf("Accuracy: %.4f\n", mean(accuracy)))
+cat(sprintf("Precision: %.4f\n", mean(precision)))
+cat(sprintf("Recall: %.4f\n", mean(recall)))
+cat(sprintf("F1-Score: %.4f\n", mean(f1)))
+
+```
